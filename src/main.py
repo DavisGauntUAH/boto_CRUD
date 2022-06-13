@@ -7,9 +7,9 @@ import os
 
 from requests import delete
 
-AWS_REGION = 'us-east-1'
-AWS_PROFILE = 'localstack'
-ENDPOINT_URL = 'http://localhost:4566'
+AWS_REGION = os.environ.get('AWS_REGION')
+AWS_PROFILE = os.environ.get('AWS_PROFILE')
+ENDPOINT_URL = os.environ.get('LOCALSTACK_ENDPOINT_URL')
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s')
@@ -23,7 +23,7 @@ def create_bucket(bucket_name):
     
     try:
         resp = s3_client.create_bucket(Bucket=bucket_name)
-    except ClientError as err:
+    except Exception as err:
         logger.exception(f'Unable to create  S3 bucket locally. Error : {err}')
     else: return resp
     
@@ -43,7 +43,7 @@ def del_bucket(b_name):
     try:
         empty_bucket(b_name)
         resp = s3_client.delete_bucket(Bucket=b_name)
-    except ClientError as err:
+    except Exception as err:
         logger.exception(f'Error: could not delete bucket: {err}')
     else:
         return resp
@@ -83,7 +83,7 @@ def list_bucket_contents(b_name):
 
 def main():
     
-    b_name = 'davis-test-bucket'
+    b_name = 'davis-crud-bucket'
     
     logger.info('Creating S3 bucket on localy ...')
     s3_log = create_bucket(b_name)

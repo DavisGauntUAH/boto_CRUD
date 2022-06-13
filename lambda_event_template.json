@@ -1,0 +1,35 @@
+{
+    "task" :"tast_name",
+    "aws_region" : "region",
+    "delete_bucket" : {
+        "bucket_name" : "bucket_name"
+    },
+    "delete_object" : {
+        "bucket_name" : "bucket_name",
+        "key" : "key"
+    },
+    "read_object" : {
+        "bucket_name" : "bucket_name",
+        "key" : "key"
+    },
+    "get_objects" : {
+        "bucket_name" : "bucket_name"
+    },
+    "make_object" : {
+        "bucket_name" : "bucket_name",
+        "key" : "key"
+    },
+    "write_object" : {
+        "bucket_name" : "bucket_name",
+        "key" : "key",
+        "write_data" : "data_to_write"
+    },
+    "append_object" : {
+        "bucket_name" : "bucket_name",
+        "key" : "key",
+        "write_data" : "data_to_write"
+    },
+    "make_bucket" : {
+        "bucket_name" : "bucket_name"
+    }
+}
