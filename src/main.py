@@ -19,7 +19,9 @@ s3_resource = boto3.resource("s3", region_name=AWS_REGION, endpoint_url=ENDPOINT
 
 
 def create_bucket(bucket_name):
-    
+    """
+    Creates a bucket in s3.  Takes in a bucket name.
+    """
     payload = {
         'task' : 'make_bucket',
         'aws_region' : AWS_REGION,
@@ -31,7 +33,9 @@ def create_bucket(bucket_name):
     
     
 def del_bucket(b_name):
-    
+    """
+    Deletes a bucket from s3,  Takes in a bucket name
+    """
     payload = {
         'task' : 'delete_bucket',
         'aws_region' : AWS_REGION,
@@ -43,7 +47,9 @@ def del_bucket(b_name):
     
     
 def del_file(b_name, f_name):
-    
+    """
+    Deletes a file from s3.  Takes in a bucket name and a file name/key
+    """
     payload = {
         'task' : 'delete_object',
         'aws_region' : AWS_REGION,
@@ -56,7 +62,10 @@ def del_file(b_name, f_name):
     
     
 def upload_file(f_path, bucket, obj_name=None):
-    
+    """
+    uploads a file to s3.  Takes in a file path, bucket name and optionaly a name for
+    the object in s3
+    """
     if obj_name is None: obj_name = os.path.basename(f_path)
     data = ''
     with open(f_path, 'r') as in_file:
@@ -74,7 +83,11 @@ def upload_file(f_path, bucket, obj_name=None):
     
     
 def list_bucket_contents(b_name):
-    
+    """
+    lists the contents of a bucket taking in a bucket name.
+    uses lambda function to preform the action  retruns the contents
+    of the bucket
+    """
     payload = {
         'task' : 'get_objects',
         'aws_region' : AWS_REGION,
@@ -87,7 +100,10 @@ def list_bucket_contents(b_name):
 
 
 def append_object(b_name, key, data):
-    
+    """
+    appends data to the end of an object taking in a bucket name, key, and
+    data to append.  uses lambda function to preform the action
+    """
     payload = {
         'task' : 'append_object',
         'aws_region' : AWS_REGION,
@@ -101,7 +117,11 @@ def append_object(b_name, key, data):
     
     
 def read_object(b_name, key):
-    
+    """
+    reads in an object from a bucket taking in a bucket name and key
+    uses lambda function to preform the action  retruns the contents
+    of the object
+    """
     payload = {
         'task' : 'read_object',
         'aws_region' : AWS_REGION,
@@ -114,7 +134,10 @@ def read_object(b_name, key):
 
 
 def call_lambda(payload):
-    
+    """
+    takes in a payload and invokes lambda_crud with that payload,
+    and handles the return for use
+    """    
     lmb_crud = boto3.client('lambda', region_name=AWS_REGION, 
                             endpoint_url=ENDPOINT_URL)
     payload = json.dumps(payload, indent=3)

@@ -10,7 +10,10 @@ logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s')
 
 def create_bucket(bucket_name, s3):
-    
+    """
+    Creates an s3 bucket.  Takes in a bucket name and the
+    neccisary s3 object.
+    """
     try:
         resp = s3.create_bucket(Bucket=bucket_name)
     except ClientError as err:
@@ -19,7 +22,10 @@ def create_bucket(bucket_name, s3):
 
 
 def empty_bucket(b_name, s3_resource):
-    
+    """
+    Deletes all the objects in an s3 bucket.  Takes in a
+    bucket name and the neccisary s3 resource
+    """
     try:
         bucket = s3_resource.Bucket(b_name)
         resp = bucket.objects.all().delete()
@@ -31,7 +37,10 @@ def empty_bucket(b_name, s3_resource):
     
     
 def del_bucket(b_name, s3_r, s3_c):
-    
+    """
+    Deletes and enpties a buckey.  Takes in a bucket name and the 
+    neccisary s3 objects
+    """
     try:
         empty_bucket(b_name, s3_r)
         resp = s3_c.delete_bucket(Bucket=b_name)
@@ -42,7 +51,10 @@ def del_bucket(b_name, s3_r, s3_c):
     
     
 def del_file(b_name, f_name, s3):
-    
+    """
+    Deletes a file from an s3 bucket.  Takes in a bucket name,
+    a file name/key and the neccisary s3 object
+    """
     try:
         s3.Object(b_name, f_name).delete()
     except Exception as err:
@@ -50,6 +62,10 @@ def del_file(b_name, f_name, s3):
     
     
 def list_bucket_contents(b_name, s3):
+    """
+    Lists the contents of an s3 bucket. Takes in a bucket name
+    and the neccisary s3 object
+    """
     try:
         bucket = s3.Bucket(b_name)
         resp = []
@@ -62,6 +78,10 @@ def list_bucket_contents(b_name, s3):
     
     
 def read_file(bucket, key, s3):
+    """
+    reads the contents of an s3 object and returns the contents.
+    Takes in a bucket name, key, and required s3 object
+    """
     try:
         bucket = s3.Bucket(bucket)
         obj = bucket.Object(key)
@@ -73,7 +93,11 @@ def read_file(bucket, key, s3):
     
     
 def write_obj(bucket, key, data, s3):
-    
+    """
+    Writes out to or over writes an object in a s3 bucket.
+    Takes in a bucket name, key, the data to write, and 
+    required s3 object
+    """
     try:
       s3.put_object( Bucket=bucket, Key=key, Body=data)
     except Exception as err:
@@ -81,12 +105,21 @@ def write_obj(bucket, key, data, s3):
       
       
 def append_obj(bucket, key, data, s3, s3_c):
+    """
+    appends data to an object stored in an s3 bucket.
+    Takes in a bucket name, key, data to append, and
+    required s3 objects
+    """
     old_data = read_file(bucket, key, s3)
     new_data = old_data+'\n'+data
     write_obj(bucket, key, new_data, s3_c)
     
     
 def get_boto3_client(service, region):
+    """
+    creates a boto service client.  Takes in the service type
+    and aws region
+    """
     try:
       client = boto3.client(service,
                             region_name=region,
@@ -98,6 +131,10 @@ def get_boto3_client(service, region):
     
     
 def get_boto3_resource(service, region):
+    """
+    creates a boto service resource.  Takes in the service type
+    and aws region
+    """
     try:
         resource = boto3.resource(service,
                             region_name=region,
