@@ -15,11 +15,6 @@
     "get_objects" : {
         "bucket_name" : "bucket_name"
     },
-    "make_object" : {
-        "bucket_name" : "bucket_name",
-        "key" : "key",
-        "object" : "object"
-    },
     "write_object" : {
         "bucket_name" : "bucket_name",
         "key" : "key",

@@ -1,11 +1,10 @@
 import glob
 import json
 import logging
+from aiohttp import Payload
 import boto3
 from botocore.exceptions import ClientError
 import os
-
-from requests import delete
 
 AWS_REGION = os.environ.get('AWS_REGION')
 AWS_PROFILE = os.environ.get('AWS_PROFILE')
@@ -21,88 +20,139 @@ s3_resource = boto3.resource("s3", region_name=AWS_REGION, endpoint_url=ENDPOINT
 
 def create_bucket(bucket_name):
     
-    try:
-        resp = s3_client.create_bucket(Bucket=bucket_name)
-    except Exception as err:
-        logger.exception(f'Unable to create  S3 bucket locally. Error : {err}')
-    else: return resp
-    
-    
-def empty_bucket(b_name):
-    
-    try:
-        bucket = s3_resource.Bucket(b_name)
-        resp = bucket.objects.all().delete()
-    except Exception as err:
-        logger.exception(f'Error : {err}')
-        raise
+    payload = {
+        'task' : 'make_bucket',
+        'aws_region' : AWS_REGION,
+        'make_bucket' : {
+            'bucket_name' : bucket_name,
+        }
+    }
+    call_lambda(payload)
     
     
 def del_bucket(b_name):
     
-    try:
-        empty_bucket(b_name)
-        resp = s3_client.delete_bucket(Bucket=b_name)
-    except Exception as err:
-        logger.exception(f'Error: could not delete bucket: {err}')
-    else:
-        return resp
+    payload = {
+        'task' : 'delete_bucket',
+        'aws_region' : AWS_REGION,
+        'delete_bucket' : {
+            'bucket_name' : b_name,
+        }
+    }
+    call_lambda(payload)
     
     
 def del_file(b_name, f_name):
     
-    try:
-        s3_resource.Object(b_name, f_name).delete()
-    except Exception as err:
-        logger.exception(f'Error: could not delete File: {err}')
-        
+    payload = {
+        'task' : 'delete_object',
+        'aws_region' : AWS_REGION,
+        'delete_object' : {
+            'bucket_name' : b_name,
+            'key' : f_name
+        }
+    }
+    call_lambda(payload)        
     
     
-def upload_file(f_name, bucket, obj_name=None):
+def upload_file(f_path, bucket, obj_name=None):
     
-    try:
-        if obj_name is None: obj_name = os.path.basename(f_name) 
-        resp = s3_client.upload_file(f_name, bucket, obj_name)
-    except ClientError as err:
-        logger.exception (f'Error: could not Upload file to {bucket}: {err}')
-    else:
-        return resp
+    if obj_name is None: obj_name = os.path.basename(f_path)
+    data = ''
+    with open(f_path, 'r') as in_file:
+        data = in_file.read()
+    payload = {
+        'task' : 'write_object',
+        'aws_region' : AWS_REGION,
+        'write_object' : {
+            'bucket_name' : bucket,
+            'key' : obj_name,
+            'write_data' : data
+        }
+    }
+    call_lambda(payload)
     
     
 def list_bucket_contents(b_name):
-    try:
-        bucket = s3_resource.Bucket(b_name)
-        resp = []
-        for obj in bucket.objects.all():
-            resp.append(obj.key)
-    except Exception as err:
-        logger.exception(f'Error: {err}')
-    else:
-        return resp
+    
+    payload = {
+        'task' : 'get_objects',
+        'aws_region' : AWS_REGION,
+        'get_objects' : {
+            'bucket_name' : b_name,
+        }
+    }
+    resp = call_lambda(payload)
+    return resp
+
+
+def append_object(b_name, key, data):
+    
+    payload = {
+        'task' : 'append_object',
+        'aws_region' : AWS_REGION,
+        'append_object' : {
+            'bucket_name' : b_name,
+            'key' : key,
+            'write_data' : data
+        }
+    }
+    call_lambda(payload)
+    
+    
+def read_object(b_name, key):
+    
+    payload = {
+        'task' : 'read_object',
+        'aws_region' : AWS_REGION,
+        'read_object' : {
+            'bucket_name' : b_name,
+            'key' : key
+        }
+    }
+    return call_lambda(payload)
+
+
+def call_lambda(payload):
+    
+    lmb_crud = boto3.client('lambda', region_name=AWS_REGION, 
+                            endpoint_url=ENDPOINT_URL)
+    payload = json.dumps(payload, indent=3)
+    objects = lmb_crud.invoke(FunctionName="lambda_crud",
+                    InvocationType='RequestResponse',
+                    Payload=payload)
+
+    data = objects['Payload'].read()
+    data = json.loads(data.decode('utf-8'))
+    return data 
+     
 
 
 def main():
-    
+
     b_name = 'davis-crud-bucket'
     
     logger.info('Creating S3 bucket on localy ...')
-    s3_log = create_bucket(b_name)
-    logger.info(json.dumps(s3_log, indent=4)+ '\n')
+    create_bucket(b_name)
     
     files = glob.glob('./import/*.txt')
     for file in files:
         upload_file(file, b_name)
         
     s3_log = list_bucket_contents(b_name)
-    logger.info(s3_log)
+    print(s3_log['message'])
     
     del_file(b_name, 'file1.txt')
     s3_log = list_bucket_contents(b_name)
-    logger.info(s3_log)    
+    print(s3_log['message'])    
+    
+    msg = "Message added by lambda!!!"
+    append_object(b_name, 'file2.txt', msg)
+    s3_log = read_object(b_name, 'file2.txt')
+    print(s3_log['message'])
     
 #    time.sleep(2)
-#    del_bucket(b_name)
-
+    del_bucket(b_name)
 
 if __name__ == '__main__':
     main()
